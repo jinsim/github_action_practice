@@ -38,7 +38,7 @@ jobs:
 
       # S3에 업로드
       - name: Deploy to S3
-        run: aws s3 sync ./dist s3://${{ secrets.AWS_S3_BUCKET_NAME }} --delete
+        run: aws s3 sync ./build s3://${{ secrets.AWS_S3_BUCKET_NAME }} --delete
 
       # CloudFront 콘텐츠 갱신
       - name: Invalidate CloudFront Cache
