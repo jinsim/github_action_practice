@@ -1,0 +1,45 @@
+name: React Build Actions
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # CI 서버로 코드 내려받기
+      - name: Checkout source code. 
+        uses: actions/checkout@v3 
+
+      # 실행 속도를 빠르게 하기 위해 설치된 Node 모듈을 캐시
+      - name: Cache node modules 
+        uses: actions/cache@v2
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+
+      # 의존성 설치
+      - name: Install Dependencies 
+        run: yarn install
+
+      # 배포 파일 생성
+      - name: Build
+        run: yarn build
+
+      # AWS 인증
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      # S3에 업로드
+      - name: Deploy to S3
+        run: aws s3 sync ./dist s3://${{ secrets.AWS_S3_BUCKET_NAME }} --delete
+
+      # CloudFront 콘텐츠 갱신
+      - name: Invalidate CloudFront Cache
+        run: aws cloudfront create-invalidation --distribution-id ${{secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID}} --paths "/*"
