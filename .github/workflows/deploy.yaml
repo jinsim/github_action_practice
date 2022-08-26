@@ -1,13 +1,16 @@
 name: React Build Actions
 
+# Event - Workflow 실행 조건
+# main 브랜치에 push를 하면 workflow가 실행된다.
 on:
   push:
     branches:
-      - main
+      - main 
 
+# Job - 독립되어 실행되는 작업(여러 step들로 이뤄진다.)
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build: # 작업 식별자 
+    runs-on: ubuntu-latest # 작업 실행 환경
     steps:
       # CI 서버로 코드 내려받기
       - name: Checkout source code. 
