@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest # 작업 실행 환경
     steps:
       # CI 서버로 코드 내려받기
-      - name: Checkout source code. 
+      - name: Checkout source code
         uses: actions/checkout@v3 
 
       # 실행 속도를 빠르게 하기 위해 설치된 Node 모듈을 캐시
@@ -31,7 +31,7 @@ jobs:
       - name: Build
         run: yarn build
 
-      # AWS 인증
+      # CI 서버에서 AWS에 접속할 사용자 등록
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -42,7 +42,12 @@ jobs:
       # S3에 업로드
       - name: Deploy to S3
         run: aws s3 sync ./build s3://${{ secrets.AWS_S3_BUCKET_NAME }} --delete
+        # sync는 S3경로와 디렉터리를 달라진 파일만 업데이트하는 방식으로 동기화시킨다. 
+        # delete 옵션을 추가하면 레포에서 삭제된 파일을 S3경로에서도 삭제한다.
+        # copy에 비해 보내는 데이터 양이 적어서 비용이 절감된다.
 
       # CloudFront 콘텐츠 갱신
       - name: Invalidate CloudFront Cache
         run: aws cloudfront create-invalidation --distribution-id ${{secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID}} --paths "/*"
+        # CloudFront에 올라간 S3 자원들은 엣지 로케이션에 캐싱되어 저장된다.(빠른 응답을 위해서) 
+        # 캐시가 만료(24시간)되기 전에 Origin Server(S3)에서 파일을 가져와 내용을 갱신하기 위해서는 캐시를 Invalidation(무효화) 해야한다.
